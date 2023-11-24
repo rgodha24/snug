@@ -3,7 +3,10 @@ use std::{
     ops::{Add, Div, Mul, Sub},
 };
 
-use crate::Unit;
+use crate::{
+    unit::parse::{ParsedUnit, ParserError},
+    Unit,
+};
 
 #[derive(Debug, PartialEq, Clone, Default)]
 pub struct Number {
@@ -11,6 +14,17 @@ pub struct Number {
     pub value: f64,
     /// the unit of the number
     pub unit: Unit,
+}
+
+impl Number {
+    pub fn new(value: f64, unit: &str) -> Result<Self, ParserError> {
+        let base_unit = ParsedUnit::parse(unit)?;
+
+        Ok(Self {
+            value: value * base_unit.n,
+            unit: base_unit.unit,
+        })
+    }
 }
 
 impl Add for Number {

@@ -4,13 +4,13 @@ use crate::{baseunit, unit::prefix::Prefix, Number, Unit};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct ParsedUnit {
-    unit: Unit,
+    pub(crate) unit: Unit,
     /// the extra number of the unit.
     ///
     /// for example, if we're parsing hr, then this would be 3600 and unit would be s.
     /// if we're parsing min, then this would be 60 and unit would be s.
     /// etc. etc.
-    n: f64,
+    pub(crate) n: f64,
 }
 
 #[derive(Debug)]
@@ -27,7 +27,10 @@ impl ParsedUnit {
 
         let mut parsed_unit = match baseunit::parse(prefixless_unit_str) {
             Ok(unit) => unit,
-            Err(ParserError::NotFound(_)) => baseunit::parse(unit_str)?,
+            Err(ParserError::NotFound(n)) => {
+                println!("not found w/ prefix, checking without. {:?}", n);
+                baseunit::parse(unit_str)?
+            }
         };
 
         parsed_unit.mult(10f64.powi(exp.into()));

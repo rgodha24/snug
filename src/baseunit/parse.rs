@@ -5,7 +5,7 @@ use crate::{
 
 use super::macros::UnitType;
 
-pub fn parse(input: &str) -> Result<ParsedUnit, ParserError> {
+pub(crate) fn parse(input: &str) -> Result<ParsedUnit, ParserError> {
     let ut = UnitType::new(input)?;
 
     let num = ut.num();

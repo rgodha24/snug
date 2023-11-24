@@ -2,7 +2,7 @@
 mod macros;
 mod parse;
 
-pub use parse::parse;
+pub(crate) use parse::parse;
 use std::fmt::Display;
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
