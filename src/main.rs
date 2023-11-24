@@ -3,18 +3,12 @@ use snug::{BaseUnits, Number, Unit};
 fn main() {
     let len = Number {
         value: 10.0,
-        unit: Unit {
-            numerator: vec![BaseUnits::Length],
-            denominator: vec![],
-        },
+        unit: Unit::from_map(&[(BaseUnits::Length, 1)]),
     };
 
     let time = Number {
         value: 4.,
-        unit: Unit {
-            numerator: vec![BaseUnits::Time],
-            denominator: vec![],
-        },
+        unit: Unit::from_map(&[(BaseUnits::Time, 1)]),
     };
 
     let times_done = Number {
@@ -24,10 +18,7 @@ fn main() {
 
     let width = Number {
         value: 2.,
-        unit: Unit {
-            numerator: vec![BaseUnits::Length],
-            denominator: vec![],
-        },
+        unit: Unit::from_map(&[(BaseUnits::Length, 1)]),
     };
 
     let speed = dbg!(len / time * times_done * width);

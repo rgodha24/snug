@@ -1,9 +1,9 @@
 use std::{
     fmt::Display,
-    ops::{Add, Div, Mul, Sub},
+    ops::{Add, Div, Index, Mul, Sub},
 };
 
-#[derive(Debug, PartialEq, Eq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum BaseUnits {
     /// second
     Time,
@@ -23,8 +23,8 @@ pub enum BaseUnits {
 
 #[derive(Debug, PartialEq, Eq, Clone, Default)]
 pub struct Unit {
-    pub numerator: Vec<BaseUnits>,
-    pub denominator: Vec<BaseUnits>,
+    /// the units indexed by their base unit
+    units: [i8; 7],
 }
 
 #[derive(Debug, PartialEq, Clone, Default)]
@@ -33,6 +33,18 @@ pub struct Number {
     pub value: f64,
     /// the unit of the number
     pub unit: Unit,
+}
+
+impl Unit {
+    pub fn from_map(map: &[(BaseUnits, i8)]) -> Self {
+        let mut units = [0; 7];
+
+        for (base, power) in map {
+            units[*base as usize] = *power;
+        }
+
+        Self { units }
+    }
 }
 
 impl Add for Number {
@@ -86,10 +98,9 @@ impl Mul for Unit {
     type Output = Unit;
 
     fn mul(mut self, other: Unit) -> Unit {
-        self.numerator.extend(other.numerator);
-        self.denominator.extend(other.denominator);
-
-        self.collapse();
+        for (i, unit) in self.units.iter_mut().enumerate() {
+            *unit += other.units[i];
+        }
 
         self
     }
@@ -110,23 +121,11 @@ impl Div for Unit {
     type Output = Unit;
 
     fn div(mut self, other: Unit) -> Unit {
-        self.numerator.extend(other.denominator);
-        self.denominator.extend(other.numerator);
-
-        self.collapse();
+        for (i, unit) in self.units.iter_mut().enumerate() {
+            *unit -= other.units[i];
+        }
 
         self
-    }
-}
-
-impl Unit {
-    fn collapse(&mut self) {
-        for i in (0..self.numerator.len()).rev() {
-            if self.denominator.contains(&self.numerator[i]) {
-                self.numerator.remove(i);
-                self.denominator.remove(i);
-            }
-        }
     }
 }
 
@@ -153,23 +152,51 @@ impl Display for BaseUnits {
 
 impl Display for Unit {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        for unit in &self.numerator {
-            write!(f, "{unit}")?;
+        let mut num = String::new();
+        let mut den = String::new();
+
+        for (i, unit) in self.units.iter().enumerate() {
+            match unit {
+                0 => continue,
+                1 => num.push_str(&format!("{}", BaseUnits::from(i))),
+                -1 => den.push_str(&format!("{}", BaseUnits::from(i))),
+                i8::MIN..=-2 => den.push_str(&format!("{}^{}", BaseUnits::from(i), unit)),
+                2..=i8::MAX => num.push_str(&format!("{}^{}", BaseUnits::from(i), unit)),
+            }
         }
 
-        if self.numerator.is_empty() {
-            write!(f, "1")?;
+        if num.is_empty() {
+            num.push('1');
         }
 
-        if !self.denominator.is_empty() {
-            write!(f, "/")?;
+        if den.is_empty() {
+            write!(f, "{}", num)
+        } else {
+            write!(f, "{} / {}", num, den)
         }
+    }
+}
 
-        for unit in &self.denominator {
-            write!(f, "{unit}")?;
+impl Index<&BaseUnits> for Unit {
+    type Output = i8;
+
+    fn index(&self, index: &BaseUnits) -> &Self::Output {
+        &self.units[*index as usize]
+    }
+}
+
+impl From<usize> for BaseUnits {
+    fn from(i: usize) -> Self {
+        match i {
+            0 => BaseUnits::Time,
+            1 => BaseUnits::Length,
+            2 => BaseUnits::Mass,
+            3 => BaseUnits::Charge,
+            4 => BaseUnits::Temp,
+            5 => BaseUnits::Luminosity,
+            6 => BaseUnits::Angle,
+            _ => panic!("Invalid base unit index"),
         }
-
-        Ok(())
     }
 }
 
