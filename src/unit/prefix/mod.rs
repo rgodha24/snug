@@ -29,7 +29,7 @@ impl_prefix!(
 );
 
 impl<'a> Prefix {
-    fn parse_prefix(s: &'a str) -> Option<(i8, &'a str)> {
+    pub(crate) fn parse_prefix(s: &'a str) -> Option<(i8, &'a str)> {
         Self::parse_prefix_unchecked(s).and_then(|(p, s)| {
             if s.len() == 0 {
                 // we parsed an actual unit as a prefix (e.g. m as only `Milli`,

@@ -1,9 +1,6 @@
-use std::{
-    ops::{Mul, MulAssign},
-    str::FromStr,
-};
+use std::ops::{Mul, MulAssign};
 
-use crate::{Number, Unit};
+use crate::{baseunit, unit::prefix::Prefix, Number, Unit};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct ParsedUnit {
@@ -18,26 +15,38 @@ pub struct ParsedUnit {
 
 #[derive(Debug)]
 pub enum ParserError {
-    NotFound,
-}
-
-impl FromStr for ParsedUnit {
-    type Err = ParserError;
-
-    fn from_str(unit: &str) -> Result<Self, Self::Err> {
-        todo!()
-    }
+    NotFound(String),
 }
 
 impl ParsedUnit {
-    fn combine(_: &[Self]) -> Self {
-        todo!()
+    pub fn parse(unit_str: &str) -> Result<Self, ParserError> {
+        let (exp, prefixless_unit_str) = match Prefix::parse_prefix(unit_str) {
+            Some((prefix, unit)) => (prefix, unit),
+            None => (0, unit_str),
+        };
+
+        let mut parsed_unit = match baseunit::parse(prefixless_unit_str) {
+            Ok(unit) => unit,
+            Err(ParserError::NotFound(_)) => baseunit::parse(unit_str)?,
+        };
+
+        parsed_unit.mult(10f64.powi(exp.into()));
+
+        Ok(parsed_unit)
+    }
+
+    fn mult(&mut self, n: f64) {
+        self.n *= n;
+    }
+
+    pub fn new(unit: Unit, n: f64) -> Self {
+        Self { unit, n }
     }
 }
 
 impl Number {
     pub fn parse_and_add_unit(&mut self, unit: &str) -> Result<(), ParserError> {
-        let parsed = unit.parse::<ParsedUnit>()?;
+        let parsed = ParsedUnit::parse(unit)?;
         self.value *= parsed.n;
         self.unit *= parsed.unit;
 
@@ -59,5 +68,62 @@ impl MulAssign<ParsedUnit> for Number {
     fn mul_assign(&mut self, rhs: ParsedUnit) {
         self.value *= rhs.n;
         self.unit *= rhs.unit;
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::BaseUnits;
+
+    use super::*;
+    #[test]
+    fn parsing_units() {
+        assert_eq!(
+            ParsedUnit::parse("s").unwrap(),
+            ParsedUnit {
+                unit: Unit::from_map(&[(BaseUnits::Time, 1)]),
+                n: 1.0,
+            }
+        );
+
+        assert_eq!(
+            ParsedUnit::parse("kg").unwrap(),
+            ParsedUnit {
+                unit: Unit::from_map(&[(BaseUnits::Mass, 1)]),
+                n: 1e3,
+            }
+        );
+
+        assert_eq!(
+            ParsedUnit::parse("um").unwrap(),
+            ParsedUnit {
+                unit: Unit::from_map(&[(BaseUnits::Length, 1)]),
+                n: 1e-6,
+            }
+        );
+
+        assert_eq!(
+            ParsedUnit::parse("N").unwrap(),
+            ParsedUnit {
+                unit: Unit::from_map(&[
+                    (BaseUnits::Length, 1),
+                    (BaseUnits::Mass, 1),
+                    (BaseUnits::Time, -2)
+                ]),
+                n: 1e3,
+            }
+        );
+
+        assert_eq!(
+            ParsedUnit::parse("mN").unwrap(),
+            ParsedUnit {
+                unit: Unit::from_map(&[
+                    (BaseUnits::Length, 1),
+                    (BaseUnits::Mass, 1),
+                    (BaseUnits::Time, -2)
+                ]),
+                n: 1.0,
+            }
+        );
     }
 }

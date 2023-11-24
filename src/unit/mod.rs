@@ -1,4 +1,4 @@
-mod parse;
+pub mod parse;
 mod prefix;
 
 use std::{
