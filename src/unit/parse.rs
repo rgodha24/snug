@@ -1,4 +1,7 @@
-use std::str::FromStr;
+use std::{
+    ops::{Mul, MulAssign},
+    str::FromStr,
+};
 
 use crate::{Number, Unit};
 
@@ -13,24 +16,48 @@ pub struct ParsedUnit {
     n: f64,
 }
 
-impl FromStr for ParsedUnit {
-    type Err = ();
+#[derive(Debug)]
+pub enum ParserError {
+    NotFound,
+}
 
-    fn from_str(_: &str) -> Result<Self, Self::Err> {
+impl FromStr for ParsedUnit {
+    type Err = ParserError;
+
+    fn from_str(unit: &str) -> Result<Self, Self::Err> {
+        todo!()
+    }
+}
+
+impl ParsedUnit {
+    fn combine(_: &[Self]) -> Self {
         todo!()
     }
 }
 
 impl Number {
-    pub fn parse_and_add_unit(&mut self, unit: &str) -> Result<(), ()> {
+    pub fn parse_and_add_unit(&mut self, unit: &str) -> Result<(), ParserError> {
         let parsed = unit.parse::<ParsedUnit>()?;
         self.value *= parsed.n;
         self.unit *= parsed.unit;
 
         Ok(())
     }
+}
 
-    pub fn add_unit(&mut self, unit: Unit) {
-        self.unit *= unit;
+impl Mul<ParsedUnit> for Number {
+    type Output = Self;
+
+    fn mul(mut self, rhs: ParsedUnit) -> Self::Output {
+        self.value *= rhs.n;
+        self.unit *= rhs.unit;
+        self
+    }
+}
+
+impl MulAssign<ParsedUnit> for Number {
+    fn mul_assign(&mut self, rhs: ParsedUnit) {
+        self.value *= rhs.n;
+        self.unit *= rhs.unit;
     }
 }
