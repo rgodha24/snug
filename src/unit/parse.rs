@@ -16,10 +16,13 @@ pub struct ParsedUnit {
 #[derive(Debug)]
 pub enum ParserError {
     NotFound(String),
+    /// only happens in Unit::parse, which can not deal with units like km, which
+    /// have a value != 1
+    NonBaseUnit,
 }
 
 impl ParsedUnit {
-    pub fn parse(unit_str: &str) -> Result<Self, ParserError> {
+    fn parse_single(unit_str: &str) -> Result<Self, ParserError> {
         let (exp, prefixless_unit_str) = match Prefix::parse_prefix(unit_str) {
             Some((prefix, unit)) => (prefix, unit),
             None => (0, unit_str),
@@ -31,11 +34,40 @@ impl ParsedUnit {
                 println!("not found w/ prefix, checking without. {:?}", n);
                 baseunit::parse(unit_str)?
             }
+            Err(ParserError::NonBaseUnit) => unreachable!("non-base unit in parse_single"),
         };
 
         parsed_unit.mult(10f64.powi(exp.into()));
 
         Ok(parsed_unit)
+    }
+
+    pub fn parse(unit_str: &str) -> Result<Self, ParserError> {
+        let mut unit = Unit::default();
+        let mut n = 1.0;
+
+        let mut is_denom = false;
+        // TODO: use a math parser to make this not suck
+        for unit_str in unit_str.split_whitespace() {
+            match unit_str {
+                "/" => {
+                    is_denom = true;
+                }
+                "*" => {}
+                u => {
+                    let parsed = Self::parse_single(u.trim())?;
+                    if is_denom {
+                        unit /= parsed.unit;
+                        n /= parsed.n;
+                    } else {
+                        unit *= parsed.unit;
+                        n *= parsed.n;
+                    }
+                }
+            }
+        }
+
+        Ok(Self { unit, n })
     }
 
     fn mult(&mut self, n: f64) {

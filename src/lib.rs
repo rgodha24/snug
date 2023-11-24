@@ -13,7 +13,7 @@
 //!    println!("acceleration: {}", acceleration); // acceleration: 3.6010833333333334 m / s^-2
 //!    assert_eq!(
 //!        acceleration.unit,
-//!        Unit::from_frac(&[BaseUnits::Length], &[BaseUnits::Time, BaseUnits::Time])
+//!        Unit::parse("m / s * s").unwrap()
 //!    );
 //!    assert!((acceleration.value - 3.6010833333333334).abs() < 1e-10);
 //!
@@ -21,7 +21,7 @@
 //!    println!("velocity: {}", velocity); // velocity: 1.6292021216666668 m / s
 //!    assert_eq!(
 //!        velocity.unit,
-//!        Unit::from_frac(&[BaseUnits::Length], &[BaseUnits::Time])
+//!        Unit::parse("m / s").unwrap()
 //!    );
 //!    assert!((velocity.value - 1.6292021216666668).abs() < 1e-10);
 //! }
@@ -29,7 +29,7 @@
 mod baseunit;
 
 mod number;
-mod unit;
+pub mod unit;
 
 pub use baseunit::BaseUnits;
 pub use number::Number;

@@ -8,6 +8,8 @@ use std::{
 
 use crate::BaseUnits;
 
+use self::parse::{ParsedUnit, ParserError};
+
 #[derive(Debug, PartialEq, Eq, Clone, Default)]
 pub struct Unit {
     /// the units indexed by their base unit
@@ -36,6 +38,16 @@ impl Unit {
         }
 
         unit
+    }
+
+    pub fn parse(unit_str: &str) -> Result<Self, ParserError> {
+        let unit = ParsedUnit::parse(unit_str)?;
+
+        if unit.n != 1.0 {
+            return Err(ParserError::NonBaseUnit);
+        } else {
+            Ok(unit.unit)
+        }
     }
 }
 
